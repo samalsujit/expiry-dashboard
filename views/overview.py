@@ -437,7 +437,7 @@ def show_overview():
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.dataframe(store_summary, use_container_width=True, hide_index=True, height=400, width="stretch")
+            st.dataframe(store_summary, use_container_width=True, hide_index=True, height=400)
     else:
         st.info("No store data available for the selected filters")
 
@@ -467,7 +467,7 @@ def show_overview():
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.dataframe(category_summary, use_container_width=True, hide_index=True, height=400, width="stretch")
+            st.dataframe(category_summary, use_container_width=True, hide_index=True, height=400)
     else:
         st.info("No category data available for the selected filters")
 
@@ -502,7 +502,7 @@ def show_overview():
             st.plotly_chart(fig, use_container_width=True)
         
         with col2:
-            st.dataframe(top10_zsku, use_container_width=True, hide_index=True, height=400, width="stretch")
+            st.dataframe(top10_zsku, use_container_width=True, hide_index=True, height=400)
     else:
         st.info("No product data available for the selected filters")
 
@@ -526,7 +526,7 @@ def show_overview():
             if not null_expiry.empty:
                 total_value = null_expiry['value'].sum() if 'value' in null_expiry.columns else 0
                 st.warning(f"⚠️ **{len(null_expiry)}** products with null adjusted expiry date | 💰 **SAR {total_value:,.2f}** in value")
-                st.dataframe(null_expiry, use_container_width=True, hide_index=True, width="stretch")
+                st.dataframe(null_expiry, use_container_width=True, hide_index=True)
             else:
                 st.success("✅ No products with null adjusted expiry date")
         
@@ -535,7 +535,7 @@ def show_overview():
             if not shelf_mismatch.empty:
                 total_value = shelf_mismatch['value'].sum() if 'value' in shelf_mismatch.columns else 0
                 st.warning(f"⚠️ **{len(shelf_mismatch)}** products with shelf life mismatch | 💰 **SAR {total_value:,.2f}** in value")
-                st.dataframe(shelf_mismatch, use_container_width=True, hide_index=True, width="stretch")
+                st.dataframe(shelf_mismatch, use_container_width=True, hide_index=True)
             else:
                 st.success("✅ No shelf life mismatches found")
         
@@ -544,7 +544,7 @@ def show_overview():
             if not disposal_alerts.empty:
                 total_value = disposal_alerts['value'].sum() if 'value' in disposal_alerts.columns else 0
                 st.error(f"🚨 **{len(disposal_alerts)}** products expiring today! | 💰 **SAR {total_value:,.2f}** in value at risk")
-                st.dataframe(disposal_alerts, use_container_width=True, hide_index=True, width="stretch")
+                st.dataframe(disposal_alerts, use_container_width=True, hide_index=True)
             else:
                 st.success("✅ No products expiring today")
         
@@ -553,7 +553,7 @@ def show_overview():
             if not low_drr.empty:
                 total_value = low_drr['value'].sum() if 'value' in low_drr.columns else 0
                 st.warning(f"⚠️ **{len(low_drr)}** products with low DRR and high quantity | 💰 **SAR {total_value:,.2f}** in value")
-                st.dataframe(low_drr, use_container_width=True, hide_index=True, width="stretch")
+                st.dataframe(low_drr, use_container_width=True, hide_index=True)
             else:
                 st.success("✅ No products with low DRR and high quantity")
     else:
@@ -565,7 +565,7 @@ def show_overview():
     with st.expander("📄 Processed Dataset"):
         df_data = dashboard.get("df", pd.DataFrame())
         if not df_data.empty:
-            st.dataframe(df_data, use_container_width=True, hide_index=True, height=400, width="stretch")
+            st.dataframe(df_data, use_container_width=True, hide_index=True, height=400)
             
             csv = df_data.to_csv(index=False)
             st.download_button(
