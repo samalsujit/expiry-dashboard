@@ -404,7 +404,7 @@ def show_overview():
             display_df = expiry_df.copy()
             display_df['Value'] = display_df['Quantity'] * (summary['total_value'] / summary['total_quantity'] if summary['total_quantity'] > 0 else 0)
             display_df['Value'] = display_df['Value'].round(2)
-            st.dataframe(display_df, use_container_width=True, hide_index=True, width="stretch")
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.divider()
 
