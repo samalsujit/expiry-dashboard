@@ -173,7 +173,6 @@ def show_analytics():
                     aging_summary,
                     use_container_width=True,
                     hide_index=True,
-                    width="stretch"
                 )
         else:
             st.info("No aging data available")
@@ -319,7 +318,6 @@ def show_analytics():
                     category_summary,
                     use_container_width=True,
                     hide_index=True,
-                    width="stretch"
                 )
         else:
             st.info("Need multiple categories for box plot")
@@ -370,7 +368,6 @@ def show_analytics():
                 reason_summary,
                 use_container_width=True,
                 hide_index=True,
-                width="stretch"
             )
         
         with col2:
@@ -395,7 +392,7 @@ def show_analytics():
                 low_drr_df,
                 use_container_width=True,
                 hide_index=True,
-                width="stretch"
+            
             )
             
             # Download button
