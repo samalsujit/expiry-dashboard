@@ -387,7 +387,6 @@ def show_exception_table(data, exception_key, df, urgent=False):
         display_df,
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     # Action buttons with unique keys - FIXED: Added unique keys to each button
