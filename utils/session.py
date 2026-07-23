@@ -1,8 +1,12 @@
+# utils/session.py
 import streamlit as st
+import os
+import pandas as pd
+from services.processor import process_dataframe, clean_dataframe
 
 
 def initialize_session():
-    """Initialize all session state variables"""
+    """Initialize all session state variables and load shared server data if available"""
     
     # Authentication
     if "logged_in" not in st.session_state:
@@ -18,13 +22,35 @@ def initialize_session():
     if "current_page" not in st.session_state:
         st.session_state.current_page = "overview"
     
-    # Data
+    # Load shared inventory file from disk if it exists
+    shared_path = "data/shared_inventory.csv"
+    shared_df = None
+    
+    if os.path.exists(shared_path):
+        try:
+            shared_df = pd.read_csv(shared_path)
+            shared_df = clean_dataframe(shared_df)
+        except Exception:
+            shared_df = None
+
+    # Data state initialization using shared data
     if "original_dataframe" not in st.session_state:
-        st.session_state.original_dataframe = None
+        st.session_state.original_dataframe = shared_df
+        
+    if "uploaded_dataframe" not in st.session_state:
+        st.session_state.uploaded_dataframe = shared_df
+        
     if "dashboard_data" not in st.session_state:
-        st.session_state.dashboard_data = None
+        if shared_df is not None and not shared_df.empty:
+            try:
+                st.session_state.dashboard_data = process_dataframe(shared_df, expiry_window="All Inventory")
+            except Exception:
+                st.session_state.dashboard_data = None
+        else:
+            st.session_state.dashboard_data = None
+            
     if "filtered_dataframe" not in st.session_state:
-        st.session_state.filtered_dataframe = None
+        st.session_state.filtered_dataframe = shared_df
     
     # Filters
     if "filters" not in st.session_state:
