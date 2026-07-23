@@ -256,7 +256,6 @@ def show_forecast():
                     use_container_width=True,
                     hide_index=True,
                     height=400,
-                    width="stretch"
                 )
             else:
                 st.info("Toggle 'Show Details' to view the data table")
