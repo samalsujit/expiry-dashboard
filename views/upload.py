@@ -1,7 +1,8 @@
 # views/upload.py
 import streamlit as st
 import pandas as pd
-from services.processor import process_dataframe
+import os
+from services.processor import process_dataframe, clean_dataframe
 
 
 def show_upload():
@@ -27,9 +28,17 @@ def show_upload():
             else:
                 df = pd.read_excel(uploaded_file)
             
-            # ✅ FIX 3: Store in both session state variables
-            st.session_state.uploaded_dataframe = df  # For data_loader.py
-            st.session_state.original_dataframe = df  # For upload view
+            # Clean dataframe columns and types
+            df = clean_dataframe(df)
+            
+            # Save to shared server directory so ALL users can access it
+            os.makedirs("data", exist_ok=True)
+            shared_path = "data/shared_inventory.csv"
+            df.to_csv(shared_path, index=False)
+            
+            # Store in session state for immediate feedback
+            st.session_state.uploaded_dataframe = df
+            st.session_state.original_dataframe = df
             
             # Display preview
             st.subheader("📋 Data Preview")
@@ -43,7 +52,7 @@ def show_upload():
                 dashboard_data = process_dataframe(df, expiry_window="All Inventory")
                 st.session_state.dashboard_data = dashboard_data
             
-            st.success("✅ Data processed successfully!")
+            st.success("✅ Data processed and saved to shared server storage successfully!")
             
             # Show column info
             with st.expander("📊 Column Information"):
