@@ -1,0 +1,338 @@
+/* ============================================
+   LOGIN PAGE - Simple Centered Card
+   ============================================ */
+
+/* Hide Streamlit branding */
+#MainMenu {visibility: hidden;}
+header {visibility: hidden;}
+footer {visibility: hidden;}
+.stApp > header {display: none !important;}
+
+/* Remove default padding from Streamlit */
+.main .block-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+/* Full page with warehouse background */
+.login-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: 
+        linear-gradient(
+            rgba(8, 25, 17, 0.75),
+            rgba(8, 25, 17, 0.85)
+        ),
+        url("../images/warehouse.jpeg");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.login-overlay {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Login Card */
+.login-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px 40px 30px;
+    width: 100%;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    animation: fadeUp 0.6s ease;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Noon Logo */
+.login-logo {
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.login-logo img {
+    height: 36px;
+    width: auto;
+    opacity: 0.8;
+}
+
+/* Login Icon */
+.login-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #edf8ef;
+    border: 2px solid #d7eadb;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    margin: 0.5rem auto 1rem auto;
+    color: #197A31;
+}
+
+/* Titles */
+.login-title {
+    text-align: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: #152447;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+}
+
+.login-subtitle {
+    text-align: center;
+    color: #69738b;
+    font-size: 15px;
+    margin-bottom: 28px;
+    font-weight: 400;
+}
+
+/* =========================
+   STREAMLIT WIDGETS OVERRIDE
+   ========================= */
+
+/* Override Streamlit's default form styling */
+.stForm {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+/* Email Input Label */
+.stTextInput > label {
+    color: #1a3a2a !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.stTextInput > div {
+    margin-bottom: 0.25rem !important;
+}
+
+/* Email Input Field */
+.stTextInput input {
+    height: 50px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #e8ebef !important;
+    font-size: 15px !important;
+    padding: 0 18px !important;
+    transition: 0.25s !important;
+    color: #0d2b1a !important;
+    background: #fafbfc !important;
+    width: 100% !important;
+}
+
+.stTextInput input:hover {
+    border-color: #6CC04A !important;
+    background: #ffffff !important;
+}
+
+.stTextInput input:focus {
+    border-color: #3DAE2B !important;
+    box-shadow: 0 0 0 4px rgba(108, 192, 74, 0.1) !important;
+    background: #ffffff !important;
+    outline: none !important;
+}
+
+.stTextInput input::placeholder {
+    color: #adb5bd !important;
+}
+
+/* Continue Button */
+div[data-testid="stForm"] .stButton > button {
+    height: 50px !important;
+    border-radius: 12px !important;
+    background: #197A31 !important;
+    color: white !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    border: none !important;
+    transition: 0.25s !important;
+    width: 100% !important;
+    cursor: pointer !important;
+    margin-top: 0.5rem !important;
+}
+
+div[data-testid="stForm"] .stButton > button:hover {
+    background: #146628 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(25, 122, 49, 0.3) !important;
+}
+
+/* Google Button */
+.stButton > button[kind="secondary"] {
+    height: 50px !important;
+    background: white !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #e8ebef !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    color: #444444 !important;
+    width: 100% !important;
+    transition: 0.25s !important;
+}
+
+.stButton > button[kind="secondary"]:hover {
+    border-color: #197A31 !important;
+    background: #f8faf8 !important;
+}
+
+/* OR Divider */
+.login-or-divider {
+    display: flex;
+    align-items: center;
+    margin: 1.4rem 0 1.2rem 0;
+    gap: 1rem;
+}
+
+.login-or-divider .line {
+    flex: 1;
+    height: 1px;
+    background: #e8ebef;
+}
+
+.login-or-divider .text {
+    color: #adb5bd;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Alert Messages */
+div[data-testid="stAlert"] {
+    border-radius: 10px !important;
+    padding: 0.5rem 1rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+div[data-testid="stAlert"] p {
+    color: #333333 !important;
+    font-size: 0.85rem !important;
+}
+
+/* Login Footer */
+.login-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 22px;
+    color: #8a8f98;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.login-footer .dot {
+    color: #dee2e6;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 600px) {
+    .login-card {
+        padding: 28px 22px 22px;
+        border-radius: 20px;
+    }
+    
+    .login-title {
+        font-size: 22px;
+    }
+    
+    .login-subtitle {
+        font-size: 14px;
+        margin-bottom: 22px;
+    }
+    
+    .login-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 26px;
+    }
+    
+    .login-logo img {
+        height: 30px;
+    }
+    
+    .stTextInput input {
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+    
+    div[data-testid="stForm"] .stButton > button {
+        height: 44px !important;
+        font-size: 15px !important;
+    }
+    
+    .stButton > button[kind="secondary"] {
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+    
+    .login-footer {
+        font-size: 11px;
+        gap: 8px;
+        margin-top: 18px;
+    }
+}
+
+@media (max-width: 400px) {
+    .login-card {
+        padding: 20px 16px 18px;
+        border-radius: 16px;
+    }
+    
+    .login-title {
+        font-size: 19px;
+    }
+    
+    .login-subtitle {
+        font-size: 13px;
+        margin-bottom: 18px;
+    }
+    
+    .login-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+    }
+    
+    .login-logo img {
+        height: 26px;
+    }
+}

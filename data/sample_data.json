@@ -1,0 +1,95 @@
+New-Item -ItemType Directory -Path "data" -Force
+@'
+[
+  {
+    "store": "Main Street Store",
+    "storeId": "ST001",
+    "product": "Organic Milk 1L",
+    "zsku": "MILK001",
+    "barcode": "8901234567890",
+    "wmsBarcode": "WMS001",
+    "drrMax": 15,
+    "category": "Dairy",
+    "shelfLife": 7,
+    "klAdjusted": 7,
+    "expiryDate": "2026-07-30",
+    "adjustedExpiryDate": "2026-07-30",
+    "quantity": 25
+  },
+  {
+    "store": "Downtown Store",
+    "storeId": "ST002",
+    "product": "Wheat Bread 500g",
+    "zsku": "BRD001",
+    "barcode": "8901234567891",
+    "wmsBarcode": "WMS002",
+    "drrMax": 8,
+    "category": "Bakery",
+    "shelfLife": 5,
+    "klAdjusted": 5,
+    "expiryDate": "2026-07-25",
+    "adjustedExpiryDate": null,
+    "quantity": 12
+  },
+  {
+    "store": "Eastside Store",
+    "storeId": "ST003",
+    "product": "Eggs 12-pack",
+    "zsku": "EGG001",
+    "barcode": "8901234567892",
+    "wmsBarcode": "WMS003",
+    "drrMax": 3,
+    "category": "Dairy",
+    "shelfLife": 14,
+    "klAdjusted": 14,
+    "expiryDate": "2026-08-15",
+    "adjustedExpiryDate": "2026-08-15",
+    "quantity": 45
+  },
+  {
+    "store": "Westside Store",
+    "storeId": "ST004",
+    "product": "Chicken Breast 500g",
+    "zsku": "CHK001",
+    "barcode": "8901234567893",
+    "wmsBarcode": "WMS004",
+    "drrMax": 0,
+    "category": "Meat",
+    "shelfLife": 3,
+    "klAdjusted": 3,
+    "expiryDate": "2026-07-22",
+    "adjustedExpiryDate": "2026-07-22",
+    "quantity": 8
+  },
+  {
+    "store": "Northgate Store",
+    "storeId": "ST005",
+    "product": "Yogurt 500ml",
+    "zsku": "YOG001",
+    "barcode": "8901234567894",
+    "wmsBarcode": "WMS005",
+    "drrMax": 25,
+    "category": "Dairy",
+    "shelfLife": 21,
+    "klAdjusted": 21,
+    "expiryDate": "2026-08-01",
+    "adjustedExpiryDate": "2026-08-01",
+    "quantity": 60
+  },
+  {
+    "store": "Southside Store",
+    "storeId": "ST006",
+    "product": "Apple Juice 1L",
+    "zsku": "JUI001",
+    "barcode": "8901234567895",
+    "wmsBarcode": "WMS006",
+    "drrMax": 12,
+    "category": "Beverages",
+    "shelfLife": 30,
+    "klAdjusted": 30,
+    "expiryDate": "2026-08-10",
+    "adjustedExpiryDate": "2026-08-10",
+    "quantity": 18
+  }
+]
+'@ | Out-File -FilePath "data\sample_data.json" -Encoding UTF8
