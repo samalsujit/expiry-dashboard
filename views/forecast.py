@@ -321,7 +321,6 @@ def show_forecast():
             urgent_products.head(20)[["zsku", "product_title", "days_to_expiry", "qty", "value", "area_name_en"]],
             use_container_width=True,
             hide_index=True,
-            width="stretch"
         )
         
         # Download list
@@ -381,7 +380,6 @@ def show_forecast():
                 store_risk.head(10),
                 use_container_width=True,
                 hide_index=True,
-                width="stretch"
             )
         
         # Show all stores with risk score
@@ -390,7 +388,6 @@ def show_forecast():
                 store_risk,
                 use_container_width=True,
                 hide_index=True,
-                width="stretch"
             )
         
         # FIXED: Calculate highest risk score outside the f-string
@@ -441,7 +438,6 @@ def show_forecast():
                 impact_summary,
                 use_container_width=True,
                 hide_index=True,
-                width="stretch"
             )
         
         # Total estimated impact - FIXED: Use variables calculated above
