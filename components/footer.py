@@ -1,3 +1,4 @@
+# components/footer.py
 import streamlit as st
 from datetime import datetime
 
@@ -32,6 +33,16 @@ def show_footer():
             color: #FEDB00;
         }
         
+        .footer a {
+            color: #1A2A4A;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
         @media (max-width: 768px) {
             .footer {
                 flex-direction: column;
@@ -51,6 +62,8 @@ def show_footer():
             <span class="brand">Expiry<span class="yellow">Dash</span></span>
             <span style="margin: 0 0.5rem;">|</span>
             v2.0.0
+            <span style="margin: 0 0.5rem;">|</span>
+            <span>Issues, feedback or queries? Reach out to <a href="mailto:susamal@noon.com">susamal@noon.com</a></span>
         </div>
         <div>
             <span>© {now.year} Expiry Removal Dashboard</span>
