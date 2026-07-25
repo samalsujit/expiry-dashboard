@@ -1,199 +1,131 @@
 # components/login.py
 import streamlit as st
-import re
-import time
 import base64
 import os
+import re
+import time
 
-def get_base64_image(image_path):
-    try:
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as img_file:
-                return base64.b64encode(img_file.read()).decode()
-    except Exception:
-        pass
+def get_base64_image(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
     return ""
 
 def show_login():
-    """Renders a clean, centered login card with a blurred warehouse background."""
-    
-    warehouse_b64 = get_base64_image("assets/images/warehouse.jpeg")
-    if not warehouse_b64:
-        warehouse_b64 = get_base64_image("assets/images/warehouse.jpg")
-    
-    bg_image_css = f'url("data:image/jpeg;base64,{warehouse_b64}")' if warehouse_b64 else 'none'
+    bg = get_base64_image("assets/images/warehouse.jpeg")
+    if not bg:
+        bg = get_base64_image("assets/images/warehouse.jpg")
+
+    bg_css = f'url("data:image/jpeg;base64,{bg}")' if bg else 'none'
 
     st.markdown(f"""
     <style>
-        #MainMenu {{
-            visibility: hidden;
-        }}
-        footer {{
-            visibility: hidden;
-        }}
-        
-        .stApp {{
-            background: linear-gradient(rgba(13, 43, 26, 0.75), rgba(13, 43, 26, 0.85)), {bg_image_css} !important;
-            background-size: cover !important;
-            background-position: center !important;
-            background-attachment: fixed !important;
-        }}
-        
-        [data-testid="stMainBlockContainer"] {{
-            background: #ffffff !important;
-            border-radius: 24px !important;
-            padding: 45px 40px 35px !important;
-            max-width: 440px !important;
-            margin: 15vh auto 0 auto !important;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        }}
-        
-        .login-icon {{
-            text-align: center;
-            font-size: 48px;
-            margin-bottom: 0.5rem;
-        }}
-        
-        .login-title {{
-            text-align: center;
-            font-size: 26px;
-            font-weight: 700;
-            color: #0d2b1a;
-            margin-bottom: 0.25rem;
-        }}
-        
-        .login-subtitle {{
-            text-align: center;
-            color: #6c757d;
-            font-size: 15px;
-            margin-bottom: 28px;
-        }}
-        
-        [data-testid="stForm"] {{
-            border: none !important;
-            padding: 0 !important;
-            background: transparent !important;
-        }}
-        
-        .stTextInput > label {{
-            color: #0d2b1a !important;
-            font-weight: 600 !important;
-            font-size: 0.85rem !important;
-        }}
-        
-        .stTextInput input {{
-            height: 50px !important;
-            border-radius: 12px !important;
-            border: 1.5px solid #e8ebef !important;
-            font-size: 15px !important;
-            padding: 0 18px !important;
-            background: #fafbfc !important;
-            color: #0d2b1a !important;
-        }}
-        
-        .stTextInput input:focus {{
-            border-color: #197A31 !important;
-            box-shadow: 0 0 0 4px rgba(25, 122, 49, 0.1) !important;
-        }}
-        
-        .stButton button[kind="primary"], div[data-testid="stForm"] button {{
-            height: 50px !important;
-            border-radius: 12px !important;
-            background: #197A31 !important;
-            color: white !important;
-            font-size: 17px !important;
-            font-weight: 700 !important;
-            border: none !important;
-            width: 100% !important;
-        }}
-        
-        .stButton button[kind="primary"]:hover, div[data-testid="stForm"] button:hover {{
-            background: #146628 !important;
-        }}
-        
-        .divider {{
-            display: flex;
-            align-items: center;
-            margin: 1.5rem 0;
-            gap: 1rem;
-        }}
-        
-        .divider .line {{
-            flex: 1;
-            height: 1px;
-            background: #e8ebef;
-        }}
-        
-        .divider .text {{
-            color: #adb5bd;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }}
-        
-        .footer {{
-            text-align: center;
-            margin-top: 22px;
-            color: #8a8f98;
-            font-size: 12px;
-        }}
+    #MainMenu {{visibility:hidden;}}
+    footer {{visibility:hidden;}}
+
+    .stApp {{
+        background: linear-gradient(rgba(8,40,22,.75), rgba(8,40,22,.85)), {bg_css};
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+
+    .stTextInput label {{
+        color: #0f2d1d !important;
+        font-weight: 600 !important;
+    }}
+    
+    .stTextInput input {{
+        color: #111111 !important;
+        -webkit-text-fill-color: #111111 !important;
+        background-color: #f8f9fa !important;
+    }}
+    
+    /* Professional brand logo badge styling */
+    .login-logo-container {{
+        display: flex;
+        justify-content: center;
+        margin-bottom: 12px;
+    }}
+    .login-logo-badge {{
+        background: #197A31;
+        color: #FEDB00;
+        font-weight: 800;
+        font-size: 22px;
+        padding: 10px 20px;
+        border-radius: 14px;
+        box-shadow: 0 4px 14px rgba(25, 122, 49, 0.25);
+        letter-spacing: -0.5px;
+    }}
+    .login-logo-badge span {{
+        color: #ffffff;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="login-icon">📊</div>
-    <div class="login-title">Expiry Removal Dashboard</div>
-    <div class="login-subtitle">Sign in to access your dashboard</div>
-    """, unsafe_allow_html=True)
+    # Center the login box horizontally using columns
+    _, col, _ = st.columns([1, 1.1, 1])
 
-    with st.form("login_form", clear_on_submit=False):
-        email = st.text_input(
-            "Email Address",
-            placeholder="Enter your email address",
-            key="login_email"
-        )
-        submitted = st.form_submit_button("Continue", use_container_width=True)
+    with col:
+        with st.container(border=True):
+            # Professional brand logo badge
+            st.markdown("""
+            <div class="login-logo-container">
+                <div class="login-logo-badge">Expiry<span>Dash</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("<h3 style='text-align: center; color: #0f2d1d; margin-top: 5px; margin-bottom: 5px;'>Expiry Removal Dashboard</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #666666; font-size: 14px; margin-bottom: 25px;'>Sign in to access your dashboard</p>", unsafe_allow_html=True)
+
+            email = st.text_input(
+                "Email Address",
+                placeholder="name@noon.com",
+                key="login_email"
+            )
+
+            password = ""
+            # Dynamically show password input ONLY if admin email is entered
+            if email and email.lower().strip() == "susamal@noon.com":
+                password = st.text_input(
+                    "Admin Password",
+                    type="password",
+                    placeholder="Enter admin password",
+                    key="login_password"
+                )
+
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+            submitted = st.button(
+                "Continue",
+                use_container_width=True,
+                type="primary"
+            )
 
     if submitted:
+        ADMIN_EMAIL = "susamal@noon.com"
+        ADMIN_PASSWORD = "AdminSecurePassword123!"
+
         if not email:
             st.error("Please enter your email address.")
-        elif not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+        elif not re.match(r'^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$', email):
             st.error("Please enter a valid email address.")
         elif not email.lower().endswith("@noon.com"):
             st.error("Access restricted to @noon.com email addresses.")
         else:
-            st.session_state.logged_in = True
-            st.session_state.user_email = email
-            
-            if email.lower() == "susamal@noon.com":
+            if email.lower() == ADMIN_EMAIL:
+                if password != ADMIN_PASSWORD:
+                    st.error("❌ Incorrect Admin password.")
+                    return
                 st.session_state.username = "Sujit Kumar"
                 st.session_state.user_role = "Admin"
             else:
                 st.session_state.username = email.split("@")[0].title()
                 st.session_state.user_role = "Viewer"
-            
-            st.success("✅ Login successful! Redirecting…")
+
+            st.session_state.logged_in = True
+            st.session_state.user_email = email
+
+            st.success("✅ Login successful! Redirecting...")
             time.sleep(0.5)
             st.rerun()
-
-    st.markdown("""
-    <div class="divider">
-        <div class="line"></div>
-        <span class="text">OR</span>
-        <div class="line"></div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.button(
-        "Sign in with Google", 
-        disabled=True, 
-        use_container_width=True, 
-        key="google_login"
-    )
-
-    st.markdown("""
-    <div class="footer">
-        🔒 Enterprise Security • Inventory Management Platform
-    </div>
-    """, unsafe_allow_html=True)
