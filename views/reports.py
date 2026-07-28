@@ -1,3 +1,4 @@
+# views/reports.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -206,7 +207,6 @@ def generate_executive_summary(df, summary, filters, export_format):
     st.markdown("### ⏰ Expiry Overview")
     
     if "days_to_expiry" in df.columns:
-        # Get expiry buckets
         def get_expiry_bucket(days):
             if days < 0:
                 return "Expired"
@@ -233,12 +233,11 @@ def generate_executive_summary(df, summary, filters, export_format):
         }).reset_index()
         expiry_summary.columns = ["Bucket", "Products", "Quantity", "Value"]
         
-        # Sort buckets
         bucket_order = ["Expired", "Today", "1-3 Days", "4-7 Days", "8-10 Days", "11-30 Days", "30+ Days"]
         expiry_summary["order"] = expiry_summary["Bucket"].apply(lambda x: bucket_order.index(x) if x in bucket_order else 999)
         expiry_summary = expiry_summary.sort_values("order").drop("order", axis=1)
         
-        st.dataframe(expiry_summary, use_container_width=True, hide_index=True)
+        st.dataframe(expiry_summary, hide_index=True)
     
     st.markdown("---")
     
@@ -248,12 +247,12 @@ def generate_executive_summary(df, summary, filters, export_format):
     with col1:
         st.markdown("### 📂 Top 5 Categories by Value")
         top_categories = df.groupby("minutes_category_new")["value"].sum().sort_values(ascending=False).head(5)
-        st.dataframe(top_categories.reset_index(), use_container_width=True, hide_index=True)
+        st.dataframe(top_categories.reset_index(), hide_index=True)
     
     with col2:
         st.markdown("### 🏪 Top 5 Stores by Value")
         top_stores = df.groupby("area_name_en")["value"].sum().sort_values(ascending=False).head(5)
-        st.dataframe(top_stores.reset_index(), use_container_width=True, hide_index=True)
+        st.dataframe(top_stores.reset_index(), hide_index=True)
     
     # ---------------- Download ----------------
     st.markdown("---")
@@ -268,7 +267,6 @@ def generate_store_report(df, filters, export_format):
     
     st.subheader("🏪 Store Performance Report")
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
@@ -282,18 +280,11 @@ def generate_store_report(df, filters, export_format):
     store_summary.columns = ["Store", "Products", "Quantity", "Value", "Avg Days to Expiry"]
     store_summary = store_summary.sort_values("Value", ascending=False)
     
-    # Calculate additional metrics
     store_summary["Avg Value per Product"] = store_summary["Value"] / store_summary["Products"]
     store_summary["% of Total Value"] = (store_summary["Value"] / store_summary["Value"].sum() * 100).round(1)
     
-    # Display summary table
-    st.dataframe(
-        store_summary,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(store_summary, hide_index=True)
     
-    # Top 10 stores chart
     st.subheader("Top 10 Stores by Value")
     fig = px.bar(
         store_summary.head(10),
@@ -326,7 +317,6 @@ def generate_category_report(df, filters, export_format):
     
     st.subheader("📂 Category Performance Report")
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
@@ -339,18 +329,11 @@ def generate_category_report(df, filters, export_format):
     category_summary.columns = ["Category", "Products", "Quantity", "Value"]
     category_summary = category_summary.sort_values("Value", ascending=False)
     
-    # Calculate additional metrics
     category_summary["Avg Value per Product"] = category_summary["Value"] / category_summary["Products"]
     category_summary["% of Total Value"] = (category_summary["Value"] / category_summary["Value"].sum() * 100).round(1)
     
-    # Display summary table
-    st.dataframe(
-        category_summary,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(category_summary, hide_index=True)
     
-    # Category distribution chart
     st.subheader("Category Value Distribution")
     fig = px.pie(
         category_summary.head(10),
@@ -381,11 +364,9 @@ def generate_expiry_report(df, filters, export_format):
         st.warning("No expiry data available")
         return
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
-    # Create buckets
     def get_expiry_bucket(days):
         if days < 0:
             return "Expired"
@@ -412,23 +393,15 @@ def generate_expiry_report(df, filters, export_format):
     }).reset_index()
     expiry_summary.columns = ["Bucket", "Products", "Quantity", "Value"]
     
-    # Sort buckets
     bucket_order = ["Expired", "Today", "1-3 Days", "4-7 Days", "8-10 Days", "11-30 Days", "30+ Days"]
     expiry_summary["order"] = expiry_summary["Bucket"].apply(lambda x: bucket_order.index(x) if x in bucket_order else 999)
     expiry_summary = expiry_summary.sort_values("order").drop("order", axis=1)
     
-    # Calculate percentages
     total_value = expiry_summary["Value"].sum()
     expiry_summary["% of Value"] = (expiry_summary["Value"] / total_value * 100).round(1) if total_value > 0 else 0
     
-    # Display summary
-    st.dataframe(
-        expiry_summary,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(expiry_summary, hide_index=True)
     
-    # Expiry distribution chart
     st.subheader("Expiry Distribution")
     fig = px.bar(
         expiry_summary,
@@ -450,15 +423,13 @@ def generate_expiry_report(df, filters, export_format):
     )
     st.plotly_chart(fig, use_container_width=True)
     
-    # Products at risk table
     st.subheader("Products at Risk (Expiring in 30 Days)")
     risk_products = df[(df["days_to_expiry"] >= 0) & (df["days_to_expiry"] <= 30)].copy()
     risk_products = risk_products.sort_values("days_to_expiry", ascending=True)
-    st.dataframe(
-        risk_products[["zsku", "product_title", "days_to_expiry", "qty", "value", "area_name_en"]],
-        use_container_width=True,
-        hide_index=True,
-    )
+    
+    desired_cols = ["zsku", "product_title", "adjusted_expiry_date", "days_to_expiry", "qty", "value", "area_name_en"]
+    available_cols = [c for c in desired_cols if c in risk_products.columns]
+    st.dataframe(risk_products[available_cols], hide_index=True)
     
     if export_format == "CSV":
         download_report("Expiry_Risk", expiry_summary)
@@ -471,7 +442,6 @@ def generate_exception_report(df, exceptions, filters, export_format):
     
     st.subheader("⚠️ Exception Report")
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
@@ -480,14 +450,12 @@ def generate_exception_report(df, exceptions, filters, export_format):
     expiry_alerts = exceptions.get("expiry_disposal_alert", pd.DataFrame())
     low_drr = exceptions.get("low_drr_high_qty", pd.DataFrame())
     
-    # Summary cards
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Null Adjusted Expiry", f"{len(null_expiry):,}")
     col2.metric("Shelf Life Mismatch", f"{len(shelf_mismatch):,}")
     col3.metric("Expiry Alerts", f"{len(expiry_alerts):,}")
     col4.metric("Low DRR", f"{len(low_drr):,}")
     
-    # Show each exception type
     st.subheader("Exception Details")
     
     exception_tabs = st.tabs([
@@ -499,30 +467,31 @@ def generate_exception_report(df, exceptions, filters, export_format):
     
     with exception_tabs[0]:
         if not null_expiry.empty:
-            st.dataframe(null_expiry, use_container_width=True, hide_index=True)
+            st.dataframe(null_expiry, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[1]:
         if not shelf_mismatch.empty:
-            st.dataframe(shelf_mismatch, use_container_width=True, hide_index=True)
+            st.dataframe(shelf_mismatch, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[2]:
         if not expiry_alerts.empty:
-            st.dataframe(expiry_alerts, use_container_width=True, hide_index=True)
+            st.dataframe(expiry_alerts, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[3]:
         if not low_drr.empty:
-            st.dataframe(low_drr, use_container_width=True, hide_index=True)
+            st.dataframe(low_drr, hide_index=True)
         else:
             st.success("No exceptions found")
     
     if export_format == "CSV":
-        download_report("Exception_Report", pd.concat([null_expiry, shelf_mismatch, expiry_alerts, low_drr]))
+        all_ex = pd.concat([null_expiry, shelf_mismatch, expiry_alerts, low_drr], ignore_index=True) if not (null_expiry.empty and shelf_mismatch.empty and expiry_alerts.empty and low_drr.empty) else pd.DataFrame()
+        download_report("Exception_Report", all_ex)
     else:
         st.info("📥 Excel export coming soon. CSV available now.")
 
@@ -532,7 +501,6 @@ def generate_slow_moving_report(df, filters, export_format):
     
     st.subheader("🐢 Slow Moving Inventory Report")
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
@@ -543,26 +511,18 @@ def generate_slow_moving_report(df, filters, export_format):
         st.success("No slow moving products identified")
         return
     
-    # Summary
     col1, col2, col3 = st.columns(3)
     col1.metric("Slow Moving Products", f"{len(low_drr):,}")
     col2.metric("Total Value", f"SAR {low_drr['value'].sum():,.2f}")
     col3.metric("Avg DRR", f"{low_drr['drr_max'].mean():.2f}")
     
-    # Format ratio for display
     if "ratio" in low_drr.columns:
         low_drr["ratio_display"] = low_drr["ratio"].apply(
             lambda x: "N/A" if x == -1 else f"{x:.2f}"
         )
     
-    # Show table
-    st.dataframe(
-        low_drr,
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(low_drr, hide_index=True)
     
-    # Distribution by reason
     reason_summary = low_drr.groupby("reason").size().reset_index(name="count")
     fig = px.pie(
         reason_summary,
@@ -588,23 +548,17 @@ def generate_top_risk_report(df, filters, export_format):
         st.warning("No expiry data available")
         return
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
-    # Filter products with positive days to expiry
     risk_products = df[df["days_to_expiry"] >= 0].copy()
     
-    # Create risk score
     risk_products["Risk Score"] = risk_products["value"] / (risk_products["days_to_expiry"] + 1)
     risk_products = risk_products.sort_values("Risk Score", ascending=False).head(100)
     
-    # Display
-    st.dataframe(
-        risk_products[["zsku", "product_title", "days_to_expiry", "qty", "value", "Risk Score", "area_name_en"]],
-        use_container_width=True,
-        hide_index=True,
-    )
+    desired_cols = ["zsku", "product_title", "adjusted_expiry_date", "days_to_expiry", "qty", "value", "Risk Score", "area_name_en"]
+    available_cols = [c for c in desired_cols if c in risk_products.columns]
+    st.dataframe(risk_products[available_cols], hide_index=True)
     
     if export_format == "CSV":
         download_report("Top_100_Risk", risk_products)
@@ -617,21 +571,13 @@ def generate_full_export(df, dashboard, filters, export_format):
     
     st.subheader("📤 Full Data Export")
     
-    # Show active filters
     if any(filters.get(k) not in ["All Inventory", "All Categories", "All ZSKU", "All Stores", ""] for k in filters.keys()):
         st.info(f"📌 Report filtered by: {', '.join([f'{k}: {v}' for k, v in filters.items() if v and v not in ['All Inventory', 'All Categories', 'All ZSKU', 'All Stores', '']])}")
     
     st.info("This report includes all processed data with all columns.")
     
-    # Display data preview
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True,
-        height=400,
-    )
+    st.dataframe(df, hide_index=True, height=400)
     
-    # Multiple export options
     if export_format == "CSV":
         csv = df.to_csv(index=False)
         st.download_button(
@@ -659,3 +605,5 @@ def download_report(name, data):
             file_name=f"{name}_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv"
         )
+    else:
+        st.warning("No data available for download.")
