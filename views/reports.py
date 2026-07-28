@@ -291,7 +291,6 @@ def generate_store_report(df, filters, export_format):
         store_summary,
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     # Top 10 stores chart
@@ -349,7 +348,6 @@ def generate_category_report(df, filters, export_format):
         category_summary,
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     # Category distribution chart
@@ -428,7 +426,6 @@ def generate_expiry_report(df, filters, export_format):
         expiry_summary,
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     # Expiry distribution chart
@@ -461,7 +458,6 @@ def generate_expiry_report(df, filters, export_format):
         risk_products[["zsku", "product_title", "days_to_expiry", "qty", "value", "area_name_en"]],
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     if export_format == "CSV":
@@ -503,25 +499,25 @@ def generate_exception_report(df, exceptions, filters, export_format):
     
     with exception_tabs[0]:
         if not null_expiry.empty:
-            st.dataframe(null_expiry, use_container_width=True, hide_index=True, width="stretch")
+            st.dataframe(null_expiry, use_container_width=True, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[1]:
         if not shelf_mismatch.empty:
-            st.dataframe(shelf_mismatch, use_container_width=True, hide_index=True, width="stretch")
+            st.dataframe(shelf_mismatch, use_container_width=True, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[2]:
         if not expiry_alerts.empty:
-            st.dataframe(expiry_alerts, use_container_width=True, hide_index=True, width="stretch")
+            st.dataframe(expiry_alerts, use_container_width=True, hide_index=True)
         else:
             st.success("No exceptions found")
     
     with exception_tabs[3]:
         if not low_drr.empty:
-            st.dataframe(low_drr, use_container_width=True, hide_index=True, width="stretch")
+            st.dataframe(low_drr, use_container_width=True, hide_index=True)
         else:
             st.success("No exceptions found")
     
@@ -564,7 +560,6 @@ def generate_slow_moving_report(df, filters, export_format):
         low_drr,
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     # Distribution by reason
@@ -609,7 +604,6 @@ def generate_top_risk_report(df, filters, export_format):
         risk_products[["zsku", "product_title", "days_to_expiry", "qty", "value", "Risk Score", "area_name_en"]],
         use_container_width=True,
         hide_index=True,
-        width="stretch"
     )
     
     if export_format == "CSV":
@@ -635,7 +629,6 @@ def generate_full_export(df, dashboard, filters, export_format):
         use_container_width=True,
         hide_index=True,
         height=400,
-        width="stretch"
     )
     
     # Multiple export options
