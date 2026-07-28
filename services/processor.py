@@ -1,3 +1,4 @@
+# services/processor.py
 import pandas as pd
 from datetime import datetime
 import numpy as np
@@ -29,13 +30,14 @@ CATEGORY_CONFIG = {
 
 # Expiry window options
 EXPIRY_WINDOWS = {
-    "All Inventory": None,
-    "Expired": (-999, -1),
+    "All Inventory": (None, None),
+    "Expired": (None, -1),
     "Today": (0, 0),
     "Within 3 Days": (0, 3),
     "Within 7 Days": (0, 7),
     "Within 10 Days": (0, 10),
     "Within 30 Days": (0, 30),
+    "31+ Days": (31, 9999)
 }
 
 
@@ -91,9 +93,18 @@ def get_category(row):
 
 
 def clean_dataframe(df):
-    """Clean and prepare the dataframe with all necessary calculations"""
+    """Clean and prepare the dataframe, forcing string types on ID columns and mapping cost_price directly to value."""
     data = df.copy()
     
+    # Standardize column names (strip whitespace and convert to lowercase)
+    data.columns = [str(c).strip().lower() for c in data.columns]
+    
+    # Force barcode, pbarcode, wms_barcode, and zsku columns to be strings explicitly to prevent Arrow crashes
+    string_cols = ["barcode", "pbarcode_canonical", "wms_barcode", "zsku", "partner_warehouse_code", "area_name_en", "minutes_category_new"]
+    for col in string_cols:
+        if col in data.columns:
+            data[col] = data[col].astype(str).replace("nan", "")
+
     # Define optional columns with default values
     OPTIONAL_COLUMNS = {
         "drr_max": 0,
@@ -108,16 +119,14 @@ def clean_dataframe(df):
     }
     
     # Handle column name variations
-    # KL_adjusted -> kl_adjusted
-    if "KL_adjusted" in data.columns and "kl_adjusted" not in data.columns:
+    if "kl_adjusted" not in data.columns and "KL_adjusted" in data.columns:
         data["kl_adjusted"] = data["KL_adjusted"]
     
-    # pbarcode_canonical or wms_barcode -> barcode
-    if "barcode" not in data.columns:
+    if "barcode" not in data.columns or (data["barcode"] == "").all():
         if "pbarcode_canonical" in data.columns:
-            data["barcode"] = data["pbarcode_canonical"]
+            data["barcode"] = data["pbarcode_canonical"].astype(str)
         elif "wms_barcode" in data.columns:
-            data["barcode"] = data["wms_barcode"]
+            data["barcode"] = data["wms_barcode"].astype(str)
         else:
             data["barcode"] = ""
     
@@ -128,51 +137,35 @@ def clean_dataframe(df):
     
     # Convert numeric fields
     data["qty"] = (
-        pd.to_numeric(
-            data["qty"],
-            errors="coerce"
-        )
+        pd.to_numeric(data["qty"], errors="coerce")
         .fillna(0)
         .astype(int)
     )
 
     data["cost_price"] = (
-        pd.to_numeric(
-            data["cost_price"],
-            errors="coerce"
-        )
+        pd.to_numeric(data["cost_price"], errors="coerce")
         .fillna(0)
     )
 
-    data["value"] = data["qty"] * data["cost_price"]
+    # Use column N (cost_price) directly as the total value for the row
+    data["value"] = data["cost_price"]
 
-    # Normalize all numeric fields that downstream functions expect
     numeric_fields = ["drr_max", "shelf_life", "kl_adjusted"]
     for field in numeric_fields:
         data[field] = (
-            pd.to_numeric(
-                data[field],
-                errors="coerce"
-            )
+            pd.to_numeric(data[field], errors="coerce")
             .fillna(0)
         )
 
-    # Date fields
-    data["expiry_date"] = pd.to_datetime(
-        data["expiry_date"],
-        errors="coerce"
-    )
+    # Date fields parsing
+    data["expiry_date"] = pd.to_datetime(data["expiry_date"], errors="coerce")
+    data["adjusted_expiry_date"] = pd.to_datetime(data["adjusted_expiry_date"], errors="coerce")
 
-    data["adjusted_expiry_date"] = pd.to_datetime(
-        data["adjusted_expiry_date"],
-        errors="coerce"
-    )
-
+    # Robust days_to_expiry calculation using adjusted_expiry_date with fallback to expiry_date
     today = pd.Timestamp.today().normalize()
+    effective_expiry = data["adjusted_expiry_date"].fillna(data["expiry_date"]).dt.normalize()
 
-    data["days_to_expiry"] = (
-        data["expiry_date"] - today
-    ).dt.days
+    data["days_to_expiry"] = (effective_expiry - today).dt.days
 
     return data
 
@@ -273,10 +266,9 @@ def get_expiry_bucket(days):
 
 
 def build_expiry_summary(data):
-    """Build expiry bucket summary - quantity only as per original dashboard"""
+    """Build expiry bucket summary - quantity only"""
     data = data.copy()
     
-    # Initialize buckets with 0
     expiry_buckets = {
         'expired': 0,
         'today': 0,
@@ -287,14 +279,13 @@ def build_expiry_summary(data):
         'days31plus': 0
     }
     
-    # Populate buckets with quantities using vectorized operations for performance
     mask_expired = data['days_to_expiry'] < 0
     mask_today = data['days_to_expiry'] == 0
-    mask_1_3 = (data['days_to_expiry'] > 0) & (data['days_to_expiry'] <= 3)
-    mask_4_7 = (data['days_to_expiry'] > 3) & (data['days_to_expiry'] <= 7)
-    mask_8_10 = (data['days_to_expiry'] > 7) & (data['days_to_expiry'] <= 10)
-    mask_11_30 = (data['days_to_expiry'] > 10) & (data['days_to_expiry'] <= 30)
-    mask_31plus = data['days_to_expiry'] > 30
+    mask_1_3 = (data['days_to_expiry'] >= 1) & (data['days_to_expiry'] <= 3)
+    mask_4_7 = (data['days_to_expiry'] >= 4) & (data['days_to_expiry'] <= 7)
+    mask_8_10 = (data['days_to_expiry'] >= 8) & (data['days_to_expiry'] <= 10)
+    mask_11_30 = (data['days_to_expiry'] >= 11) & (data['days_to_expiry'] <= 30)
+    mask_31plus = data['days_to_expiry'] >= 31
     
     expiry_buckets['expired'] = data.loc[mask_expired, 'qty'].sum()
     expiry_buckets['today'] = data.loc[mask_today, 'qty'].sum()
@@ -333,7 +324,7 @@ def build_null_adjusted_expiry(data):
 
 
 def build_shelf_life_mismatch(data):
-    """Find products where shelf_life == kl_adjusted (preserving original business logic)"""
+    """Find products where shelf_life == kl_adjusted"""
     if data.empty:
         return pd.DataFrame()
     
@@ -356,7 +347,7 @@ def build_shelf_life_mismatch(data):
 
 
 def build_expiry_disposal_alert(data):
-    """Find products expiring today (days_to_expiry == 0 as per original dashboard)"""
+    """Find products expiring today"""
     if data.empty:
         return pd.DataFrame()
     
@@ -381,7 +372,7 @@ def build_expiry_disposal_alert(data):
 
 
 def build_low_drr_high_qty(data):
-    """Find products with low DRR and high quantity (exact original dashboard logic)"""
+    """Find products with low DRR and high quantity"""
     if data.empty:
         return pd.DataFrame()
     
@@ -391,14 +382,11 @@ def build_low_drr_high_qty(data):
         drr_max = row.get('drr_max', 0)
         qty = row.get('qty', 0)
         
-        # Calculate ratio (original dashboard logic)
-        # Store as float for Arrow compatibility, use -1 for "N/A"
         if drr_max == 0:
-            ratio = -1.0  # Use -1 to represent "N/A" for display later
+            ratio = -1.0
         else:
             ratio = qty / drr_max
         
-        # Apply rules (only flag products that actually have stock)
         if drr_max == 0 and qty > 0:
             result.append({
                 'zsku': row.get('zsku', ''),
@@ -413,7 +401,7 @@ def build_low_drr_high_qty(data):
                 'kl_adjusted': row.get('kl_adjusted', 0),
                 'barcode': row.get('barcode', ''),
                 'cost_price': row.get('cost_price', 0),
-                'ratio': ratio,  # Now a float, Arrow compatible
+                'ratio': ratio,
                 'reason': 'Zero DRR'
             })
         elif drr_max <= 2 and qty > 0:
@@ -430,7 +418,7 @@ def build_low_drr_high_qty(data):
                 'kl_adjusted': row.get('kl_adjusted', 0),
                 'barcode': row.get('barcode', ''),
                 'cost_price': row.get('cost_price', 0),
-                'ratio': ratio,  # Now a float, Arrow compatible
+                'ratio': ratio,
                 'reason': 'DRR <= 2'
             })
         elif drr_max < 5 and qty > 10:
@@ -438,7 +426,6 @@ def build_low_drr_high_qty(data):
                 'zsku': row.get('zsku', ''),
                 'product_title': row.get('product_title', ''),
                 'area_name_en': row.get('area_name_en', ''),
-                'partner_warehouse_code': row.get('partner_warehouse_code', ''),
                 'minutes_category_new': row.get('minutes_category_new', ''),
                 'qty': qty,
                 'value': row.get('value', 0),
@@ -447,7 +434,7 @@ def build_low_drr_high_qty(data):
                 'kl_adjusted': row.get('kl_adjusted', 0),
                 'barcode': row.get('barcode', ''),
                 'cost_price': row.get('cost_price', 0),
-                'ratio': ratio,  # Now a float, Arrow compatible
+                'ratio': ratio,
                 'reason': 'DRR < 5 and Qty > 10'
             })
         elif drr_max < 10 and qty > 30:
@@ -455,7 +442,6 @@ def build_low_drr_high_qty(data):
                 'zsku': row.get('zsku', ''),
                 'product_title': row.get('product_title', ''),
                 'area_name_en': row.get('area_name_en', ''),
-                'partner_warehouse_code': row.get('partner_warehouse_code', ''),
                 'minutes_category_new': row.get('minutes_category_new', ''),
                 'qty': qty,
                 'value': row.get('value', 0),
@@ -464,15 +450,11 @@ def build_low_drr_high_qty(data):
                 'kl_adjusted': row.get('kl_adjusted', 0),
                 'barcode': row.get('barcode', ''),
                 'cost_price': row.get('cost_price', 0),
-                'ratio': ratio,  # Now a float, Arrow compatible
+                'ratio': ratio,
                 'reason': 'DRR < 10 and Qty > 30'
             })
     
-    result_df = pd.DataFrame(result)
-    
-    # Convert ratio back to "N/A" for display (but keep as float in dataframe)
-    # We'll handle display formatting in the UI
-    return result_df
+    return pd.DataFrame(result)
 
 
 def process_dataframe(df, expiry_window="All Inventory"):
@@ -480,13 +462,9 @@ def process_dataframe(df, expiry_window="All Inventory"):
     if df.empty:
         return {}
     
-    # Clean data
     data = clean_dataframe(df)
-    
-    # Apply category filter
     data = apply_category_filter(data)
     
-    # Apply expiry window filter (only if data has days_to_expiry)
     if "days_to_expiry" in data.columns:
         if expiry_window != "All Inventory":
             if expiry_window == "Expired":
@@ -500,17 +478,14 @@ def process_dataframe(df, expiry_window="All Inventory"):
                         (data["days_to_expiry"] <= max_days)
                     ]
     
-    # Get reference date once for the entire dashboard
     today = pd.Timestamp.today().normalize()
     
-    # Build all summaries
     summary = build_summary(data)
     store_summary = build_store_summary(data)
     category_summary = build_category_summary(data)
     top10_zsku = build_top10_zsku(data)
     expiry_summary = build_expiry_summary(data)
     
-    # Build exception tables (migrated from original dashboard)
     null_adjusted_expiry = build_null_adjusted_expiry(data)
     shelf_life_mismatch = build_shelf_life_mismatch(data)
     expiry_disposal_alert = build_expiry_disposal_alert(data)
