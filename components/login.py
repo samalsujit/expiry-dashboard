@@ -41,7 +41,6 @@ def show_login():
         background-color: #f8f9fa !important;
     }}
     
-    /* Professional brand logo badge styling */
     .login-logo-container {{
         display: flex;
         justify-content: center;
@@ -63,12 +62,21 @@ def show_login():
     </style>
     """, unsafe_allow_html=True)
 
+    # Initialize global users list in session state so Admin updates are recognized
+    if "users" not in st.session_state:
+        st.session_state.users = [
+            {"Username": "Sujit Kumar", "Role": "Admin", "Email": "susamal@noon.com", "Status": "Active"},
+            {"Username": "Manash", "Role": "Admin", "Email": "masahoo@noon.com", "Status": "Active"},
+            {"Username": "Manager", "Role": "Manager", "Email": "manager@noon.com", "Status": "Active"},
+            {"Username": "Analyst", "Role": "Analyst", "Email": "analyst@noon.com", "Status": "Active"},
+            {"Username": "Viewer", "Role": "Viewer", "Email": "viewer@noon.com", "Status": "Inactive"},
+        ]
+
     # Center the login box horizontally using columns
     _, col, _ = st.columns([1, 1.1, 1])
 
     with col:
         with st.container(border=True):
-            # Professional brand logo badge
             st.markdown("""
             <div class="login-logo-container">
                 <div class="login-logo-badge">Expiry<span>Dash</span></div>
@@ -84,9 +92,12 @@ def show_login():
                 key="login_email"
             )
 
+            # Check if the entered email belongs to an Admin user
+            matching_user = next((u for u in st.session_state.users if u["Email"].lower() == email.lower().strip()), None)
+            is_admin_user = (matching_user and matching_user["Role"] == "Admin") or (email and email.lower().strip() == "susamal@noon.com")
+
             password = ""
-            # Dynamically show password input ONLY if admin email is entered
-            if email and email.lower().strip() == "susamal@noon.com":
+            if is_admin_user:
                 password = st.text_input(
                     "Admin Password",
                     type="password",
@@ -103,7 +114,6 @@ def show_login():
             )
 
     if submitted:
-        ADMIN_EMAIL = "susamal@noon.com"
         ADMIN_PASSWORD = "AdminSecurePassword123!"
 
         if not email:
@@ -113,16 +123,23 @@ def show_login():
         elif not email.lower().endswith("@noon.com"):
             st.error("Access restricted to @noon.com email addresses.")
         else:
-            if email.lower() == ADMIN_EMAIL:
+            # Look up role dynamically from st.session_state.users
+            user_record = next((u for u in st.session_state.users if u["Email"].lower() == email.lower().strip()), None)
+            
+            if user_record and user_record["Status"] == "Inactive":
+                st.error("❌ This account is inactive.")
+                return
+
+            assigned_role = user_record["Role"] if user_record else "Viewer"
+            username = user_record["Username"] if user_record else email.split("@")[0].title()
+
+            if assigned_role == "Admin":
                 if password != ADMIN_PASSWORD:
                     st.error("❌ Incorrect Admin password.")
                     return
-                st.session_state.username = "Sujit Kumar"
-                st.session_state.user_role = "Admin"
-            else:
-                st.session_state.username = email.split("@")[0].title()
-                st.session_state.user_role = "Viewer"
 
+            st.session_state.username = username
+            st.session_state.user_role = assigned_role
             st.session_state.logged_in = True
             st.session_state.user_email = email
 
