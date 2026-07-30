@@ -24,19 +24,27 @@ COLOR_SCALE = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
 
 
 def initialize_filters():
-    """Initialize filter session state if not exists"""
+    """Initialize filter session state and safely add missing keys if session already exists"""
+    default_filters = {
+        "expiry_mode": "All Inventory",
+        "exact_days": 0,
+        "category": "All Categories",
+        "zsku": "All ZSKU",
+        "store": "All Stores",
+        "store_codes": [],
+        "search": ""
+    }
+    
     if "filters" not in st.session_state:
-        st.session_state.filters = {
-            "expiry_mode": "All Inventory",
-            "exact_days": 0,
-            "category": "All Categories",
-            "zsku": "All ZSKU",
-            "store": "All Stores",
-            "search": ""
-        }
+        st.session_state.filters = default_filters
+    else:
+        # Patch any missing keys in existing session state to prevent KeyErrors
+        for key, val in default_filters.items():
+            if key not in st.session_state.filters:
+                st.session_state.filters[key] = val
 
 
-def get_filtered_options(data, selected_category=None, selected_store=None):
+def get_filtered_options(data, selected_category=None, selected_store=None, selected_store_codes=None):
     """Get filtered options for dependent dropdowns"""
     if data is None or data.empty:
         return pd.DataFrame()
@@ -48,6 +56,9 @@ def get_filtered_options(data, selected_category=None, selected_store=None):
     
     if selected_store and selected_store != "All Stores":
         filtered_data = filtered_data[filtered_data["area_name_en"].astype(str) == str(selected_store)]
+        
+    if selected_store_codes and len(selected_store_codes) > 0:
+        filtered_data = filtered_data[filtered_data["partner_warehouse_code"].astype(str).isin([str(c) for c in selected_store_codes])]
     
     return filtered_data
 
@@ -70,19 +81,24 @@ def apply_all_filters(data, filters):
         filtered_data = filtered_data[filtered_data["days_to_expiry"] == exact_d]
     
     # Apply category filter
-    if filters["category"] != "All Categories":
+    if filters.get("category", "All Categories") != "All Categories":
         filtered_data = filtered_data[filtered_data["minutes_category_new"].astype(str) == str(filters["category"])]
     
     # Apply store filter
-    if filters["store"] != "All Stores":
+    if filters.get("store", "All Stores") != "All Stores":
         filtered_data = filtered_data[filtered_data["area_name_en"].astype(str) == str(filters["store"])]
+        
+    # Apply store codes multi-select filter safely
+    store_codes_list = filters.get("store_codes", [])
+    if store_codes_list and len(store_codes_list) > 0:
+        filtered_data = filtered_data[filtered_data["partner_warehouse_code"].astype(str).isin([str(c) for c in store_codes_list])]
     
     # Apply ZSKU filter
-    if filters["zsku"] != "All ZSKU":
+    if filters.get("zsku", "All ZSKU") != "All ZSKU":
         filtered_data = filtered_data[filtered_data["zsku"].astype(str) == str(filters["zsku"])]
     
     # Apply search filter
-    if filters["search"]:
+    if filters.get("search", ""):
         search_term = filters["search"].lower()
         filtered_data = filtered_data[
             filtered_data["zsku"].astype(str).str.lower().str.contains(search_term, na=False) |
@@ -94,7 +110,7 @@ def apply_all_filters(data, filters):
 
 
 def render_filter_bar():
-    """Render the production-grade filter bar with exact day offset selection"""
+    """Render the production-grade filter bar with exact day offset and multi-select store codes"""
     
     df = st.session_state.get("original_dataframe")
     
@@ -109,31 +125,25 @@ def render_filter_bar():
     
     categories = sorted(df["minutes_category_new"].dropna().astype(str).unique())
     stores = sorted(df["area_name_en"].dropna().astype(str).unique())
+    store_codes = sorted(df["partner_warehouse_code"].dropna().astype(str).unique())
     
     current_filters = st.session_state.filters
     
     zsku_options = ["All ZSKU"]
     filtered_for_zsku = get_filtered_options(
         df, 
-        current_filters["category"], 
-        current_filters["store"]
+        current_filters.get("category"), 
+        current_filters.get("store"),
+        current_filters.get("store_codes")
     )
     if not filtered_for_zsku.empty:
         zsku_options.extend(sorted(filtered_for_zsku["zsku"].dropna().astype(str).unique()))
     
     category_options = ["All Categories"]
-    if current_filters["store"] != "All Stores":
-        filtered_for_cat = df[df["area_name_en"].astype(str) == str(current_filters["store"])]
-        category_options.extend(sorted(filtered_for_cat["minutes_category_new"].dropna().astype(str).unique()))
-    else:
-        category_options.extend(categories)
+    category_options.extend(categories)
     
     store_options = ["All Stores"]
-    if current_filters["category"] != "All Categories":
-        filtered_for_store = df[df["minutes_category_new"].astype(str) == str(current_filters["category"])]
-        store_options.extend(sorted(filtered_for_store["area_name_en"].dropna().astype(str).unique()))
-    else:
-        store_options.extend(stores)
+    store_options.extend(stores)
     
     st.markdown("""
     <div style="
@@ -149,7 +159,7 @@ def render_filter_bar():
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2, col3, col4, col5, col6 = st.columns([2.2, 1.8, 1.8, 1.8, 1.5, 1])
+    col1, col2, col3, col4, col5, col6, col7 = st.columns([2.2, 1.5, 1.5, 1.5, 1.8, 1.2, 0.9])
     
     with col1:
         st.caption("📅 Expiry Selection")
@@ -166,26 +176,27 @@ def render_filter_bar():
         )
         current_filters["expiry_mode"] = expiry_mode
         
-        # If Exact Days Ahead is selected, show a compact number input underneath
         if expiry_mode == "Exact Days Ahead":
             exact_days = st.number_input(
                 "Days Ahead",
                 min_value=0,
                 max_value=365,
-                value=current_filters.get("exact_days", 0),
                 step=1,
                 key="filter_exact_days"
             )
             current_filters["exact_days"] = exact_days
         else:
             current_filters["exact_days"] = 0
+            if "filter_exact_days" in st.session_state:
+                st.session_state["filter_exact_days"] = 0
     
     with col2:
         st.caption("📂 Category")
-        if current_filters["category"] not in category_options:
-            current_filters["category"] = "All Categories"
+        cat_val = current_filters.get("category", "All Categories")
+        if cat_val not in category_options:
+            cat_val = "All Categories"
         
-        cat_index = category_options.index(current_filters["category"]) if current_filters["category"] in category_options else 0
+        cat_index = category_options.index(cat_val) if cat_val in category_options else 0
         category = st.selectbox(
             "Category",
             options=category_options,
@@ -197,10 +208,11 @@ def render_filter_bar():
     
     with col3:
         st.caption("🔢 ZSKU")
-        if current_filters["zsku"] not in zsku_options:
-            current_filters["zsku"] = "All ZSKU"
+        zsku_val = current_filters.get("zsku", "All ZSKU")
+        if zsku_val not in zsku_options:
+            zsku_val = "All ZSKU"
         
-        zsku_index = zsku_options.index(current_filters["zsku"]) if current_filters["zsku"] in zsku_options else 0
+        zsku_index = zsku_options.index(zsku_val) if zsku_val in zsku_options else 0
         zsku = st.selectbox(
             "ZSKU",
             options=zsku_options,
@@ -211,32 +223,45 @@ def render_filter_bar():
         current_filters["zsku"] = zsku
     
     with col4:
-        st.caption("🏪 Store")
-        if current_filters["store"] not in store_options:
-            current_filters["store"] = "All Stores"
+        st.caption("🏪 Store Name")
+        store_val = current_filters.get("store", "All Stores")
+        if store_val not in store_options:
+            store_val = "All Stores"
         
-        store_index = store_options.index(current_filters["store"]) if current_filters["store"] in store_options else 0
+        store_index = store_options.index(store_val) if store_val in store_options else 0
         store = st.selectbox(
-            "Store",
+            "Store Name",
             options=store_options,
             index=store_index,
             key="filter_store",
             label_visibility="collapsed"
         )
         current_filters["store"] = store
-    
+
     with col5:
+        st.caption("🏢 Store Code (Multi)")
+        store_codes_selected = st.multiselect(
+            "Store Code",
+            options=store_codes,
+            default=current_filters.get("store_codes", []),
+            key="filter_store_codes",
+            label_visibility="collapsed",
+            placeholder="Select codes..."
+        )
+        current_filters["store_codes"] = store_codes_selected
+    
+    with col6:
         st.caption("🔍 Search")
         search = st.text_input(
             "Search",
-            value=current_filters["search"],
+            value=current_filters.get("search", ""),
             key="filter_search",
             label_visibility="collapsed",
-            placeholder="ZSKU, Product, Barcode..."
+            placeholder="ZSKU, Title..."
         )
         current_filters["search"] = search
     
-    with col6:
+    with col7:
         st.caption(" ")
         if st.button("🗑️ Clear", use_container_width=True, help="Reset all filters", key="clear_all_filters"):
             st.session_state.filters = {
@@ -245,10 +270,11 @@ def render_filter_bar():
                 "category": "All Categories",
                 "zsku": "All ZSKU",
                 "store": "All Stores",
+                "store_codes": [],
                 "search": ""
             }
             
-            for widget_key in ["filter_expiry_mode", "filter_exact_days", "filter_category", "filter_zsku", "filter_store", "filter_search"]:
+            for widget_key in ["filter_expiry_mode", "filter_exact_days", "filter_category", "filter_zsku", "filter_store", "filter_store_codes", "filter_search"]:
                 if widget_key in st.session_state:
                     del st.session_state[widget_key]
             
@@ -259,13 +285,16 @@ def render_filter_bar():
         "expiry_mode": "📅",
         "category": "📂",
         "zsku": "🔢",
-        "store": "🏪"
+        "store": "🏪",
+        "store_codes": "🏢"
     }
     
     for key, value in current_filters.items():
         if key in ["search", "exact_days"]:
             continue
-        if value and value not in ["All Categories", "All ZSKU", "All Stores", "All Inventory"]:
+        if key == "store_codes" and value:
+            active_filters.append(f"🏢 Codes: {', '.join(value)}")
+        elif value and value not in ["All Categories", "All ZSKU", "All Stores", "All Inventory"]:
             icon = filter_icons.get(key, "")
             if key == "expiry_mode" and value == "Exact Days Ahead":
                 active_filters.append(f"📅 Exactly {current_filters.get('exact_days', 0)} Days Ahead")
@@ -337,7 +366,6 @@ def show_overview():
         return
     
     with st.spinner("Updating dashboard..."):
-        # Pass dummy window for processor compatibility
         dashboard_data = process_dataframe(filtered_df, expiry_window="All Inventory")
         st.session_state.dashboard_data = dashboard_data
     
@@ -377,7 +405,7 @@ def show_overview():
     current_filters = st.session_state.get("filters", {})
     if current_filters.get("zsku") != "All ZSKU" or current_filters.get("search") or current_filters.get("expiry_mode") == "Exact Days Ahead":
         st.subheader("🔍 Filtered Product Expiry & Batch Details")
-        detail_cols = ["zsku", "product_title", "adjusted_expiry_date", "days_to_expiry", "qty", "value", "area_name_en"]
+        detail_cols = ["zsku", "product_title", "partner_warehouse_code", "area_name_en", "adjusted_expiry_date", "days_to_expiry", "qty", "value"]
         available_detail_cols = [c for c in detail_cols if c in filtered_df.columns]
         st.dataframe(filtered_df[available_detail_cols], hide_index=True)
         st.divider()
@@ -541,6 +569,6 @@ def show_overview():
             st.download_button(
                 label="📥 Download Processed Data (CSV)",
                 data=csv,
-                file_name=f"processed_data_{dashboard.get('today', pd.Timestamp.today()).strftime('%Y%m%d')}.csv",
+                file_name=f"processed_data_{dashboard.get('today', pd.Timestamp.today().strftime('%Y%m%d'))}.csv",
                 mime="text/csv"
             )
